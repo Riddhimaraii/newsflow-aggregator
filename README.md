@@ -124,12 +124,15 @@ newsflow-aggregator/
 ├── public/
 ├── package.json
 
+
+---
+
 ## 📫 Contact
 
 If you have feedback or suggestions, feel free to open an issue or connect.
 
-⭐ If you found this project useful, consider giving it a star!
-└── README.md
+---
 
-## 📁 Repository Structure
+⭐ If you found this project useful, consider giving it a star!
+
 
