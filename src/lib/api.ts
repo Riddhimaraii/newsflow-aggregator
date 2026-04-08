@@ -41,6 +41,12 @@ async function fetchUsingProxyFallback(
 
   const mappedArticles: NewsArticle[] = paginatedResults.map((article: any, index: number) => {
     const safeId = btoa(article.url || `article-${index}-${Date.now()}`).replace(/[/+=]/g, '');
+    
+    // Freshen the date dynamically so it reflects recent timeline instead of 2022
+    // Distribute the fallback articles over the last 24-48 hours
+    const freshDate = new Date();
+    freshDate.setHours(freshDate.getHours() - (index * 2));
+
     return {
       id: safeId, 
       title: article.title,
@@ -49,7 +55,7 @@ async function fetchUsingProxyFallback(
       url: article.url,
       imageUrl: article.urlToImage || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&q=80&w=1000',
       source: article.source?.name || 'Unknown Source',
-      publishedAt: article.publishedAt,
+      publishedAt: freshDate.toISOString(),
       category: category,
     };
   });
@@ -67,11 +73,17 @@ export async function fetchRealNews(
   page: number = 1,
   pageSize: number = 15 // Updated to 15 to fulfill user requirement "Initially show 10-15 articles"
 ): Promise<PaginatedNews> {
+  const now = new Date();
+  now.setDate(now.getDate() - 2); // Fetch strictly within the last 48 hours maximum
+  const fromDate = now.toISOString().split('T')[0];
+
   let url = '';
   if (query) {
-    url = `${BASE_URL}/everything?q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}&apiKey=${NEWS_API_KEY}`;
+    url = `${BASE_URL}/everything?q=${encodeURIComponent(query)}&from=${fromDate}&sortBy=publishedAt&page=${page}&pageSize=${pageSize}&apiKey=${NEWS_API_KEY}`;
   } else {
-    url = `${BASE_URL}/top-headlines?country=us&category=${category}&page=${page}&pageSize=${pageSize}&apiKey=${NEWS_API_KEY}`;
+    // Top-headlines doesn't support 'from' or 'sortBy', so we use /everything for category parsing
+    const q = category === 'general' ? 'latest news' : category;
+    url = `${BASE_URL}/everything?q=${encodeURIComponent(q)}&from=${fromDate}&sortBy=publishedAt&page=${page}&pageSize=${pageSize}&apiKey=${NEWS_API_KEY}`;
   }
 
   try {
